@@ -226,18 +226,16 @@ class Main:
 
     def create_commands(self):
         commandList = [
-            Command.Command(self.handle_dicegolf, ['!dicegolf', '!dg'], user_cooldown=1, command_cooldown=1),
-            Command.Command(self.handle_text, ["!fact", "!f", 'forsenScoots', 'OMGScoots'],
-                            user_cooldown=1, command_cooldown=1),
-            Command.Command(self.handle_joke, ["!joke", "!j", 'EleGiggle', '4Head'],
-                            user_cooldown=1, command_cooldown=1),
+            Command.Command(self.handle_dicegolf, ['!dicegolf', '!dg']),
+            Command.Command(self.handle_text, ["!fact", "!f", 'forsenScoots', 'OMGScoots']),
+            Command.Command(self.handle_joke, ["!joke", "!j", 'EleGiggle', '4Head']),
             # Command.Command(self.handle_pun, ["!pun", "!p", '4Head'],
             #                 user_cooldown=1, command_cooldown=1),
             Command.Command(self.wat,
                             ['!active', '!activehours', '!tophours', '!topactivehours', '!tophoursinchat',
                              '!activehoursinchat', '!acivehoursinchat', '!topactivehoursinchat']),
             Command.Command(lambda a, b, c: self.bot.queue_message("bUrself"), ["bUrself"]),
-            Command.Command(self.handle_dicethrow, ['!d'], user_cooldown=1, command_cooldown=1),
+            Command.Command(self.handle_dicethrow, ['!d']),
             Command.Command(self.handle_nam, ['NaM', 'NAMMERS'], 0, 0, False, False, requires_start_message=False),
             Command.Command(self.cmd_nampoints, ['!nampoints', '!nampoint']),
             Command.Command(self.cmd_parrot, ['!parrot'], 0, 0, requires_user_cooldown=False,
