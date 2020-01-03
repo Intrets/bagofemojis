@@ -111,7 +111,7 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
             f(c, e)
 
     def on_pubmsg(self, c, e):
-        if self.config.checkOnline and not self.online:
+        if not self.config.checkOnline or not self.online:
             for f in self.pubBinds:
                 f(c, e)
 

@@ -1,3 +1,7 @@
+def bool(str):
+    return str.lower() == 'true'
+
+
 class Config:
 
     def __init__(self):
