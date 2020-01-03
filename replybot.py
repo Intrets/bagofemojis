@@ -1,8 +1,5 @@
 import random
-import threading
 import time
-
-import requests
 
 import CharacterLimit
 import Command
@@ -10,20 +7,6 @@ import DataBase
 import NaMBounty
 import TwitchBot
 import markov
-
-
-class ActiveUsers(threading.Thread):
-    def __init__(self, bot):
-        self.bot = bot
-        threading.Thread.__init__(self)
-
-    def run(self):
-        payload = "https://tmi.twitch.tv/group/user/" + self.bot.channel + "/chatters"
-        r = requests.get(payload, headers={'Client-ID': self.bot.config.client_id})
-        viewers = r.json()['chatters']['viewers']
-        message = " ".join(viewers)
-        print(message)
-        self.bot.queue_message(message)
 
 
 def starts_with_list(str: str, list: list, cap_important=True):
@@ -146,7 +129,13 @@ class Main:
             stylizednam = stylizednam.upper()
             self.nammers.append(('NaM 👉 ' + stylizednam.rstrip(), word))
 
-        self.catfactsGen = markov.Markov(self.config.factsFileLocation)
+        self.realFacts = []
+        with open(self.config.factsFileLocation, encoding='utf-8-sig') as file:
+            for line in file:
+                if len(line) > 3:
+                    self.realFacts.append(line.rstrip())
+
+        self.factsGen = markov.Markov(self.config.factsFileLocation)
         self.questionsGen = markov.Markov(self.config.questionsFileLocation)
         self.answersGen = markov.Markov(self.config.answersFileLocation)
         self.jokes = []
@@ -227,13 +216,11 @@ class Main:
     def create_commands(self):
         commandList = [
             Command.Command(self.handle_dicegolf, ['!dicegolf', '!dg']),
-            Command.Command(self.handle_text, ["!fact", "!f", 'forsenScoots', 'OMGScoots']),
+            Command.Command(self.handle_realfact, ["!fact", "!f", 'forsenScoots', 'OMGScoots']),
+            Command.Command(self.handle_fakefact, ['!realfact', '!rf']),
             Command.Command(self.handle_joke, ["!joke", "!j", 'EleGiggle', '4Head']),
             # Command.Command(self.handle_pun, ["!pun", "!p", '4Head'],
             #                 user_cooldown=1, command_cooldown=1),
-            Command.Command(self.wat,
-                            ['!active', '!activehours', '!tophours', '!topactivehours', '!tophoursinchat',
-                             '!activehoursinchat', '!acivehoursinchat', '!topactivehoursinchat']),
             Command.Command(lambda a, b, c: self.bot.queue_message("bUrself"), ["bUrself"]),
             Command.Command(self.handle_dicethrow, ['!d']),
             Command.Command(self.handle_nam, ['NaM', 'NAMMERS'], 0, 0, False, False, requires_start_message=False),
@@ -286,17 +273,17 @@ class Main:
         #     res = self.catfactsGen.gen()
         self.bot.queue_message(res, priority=True, banphrasecheck=True)
 
-    def handle_text(self, message, user_id, display_name):
-        m = message.split()
-        if (len(m) > 1):
-            res = self.catfactsGen.gen(m[1:])
-        else:
-            res = self.catfactsGen.gen()
+    def handle_realfact(self, message, user_id, display_name):
+        res = random.choice(self.realFacts)
         self.bot.queue_message(res, priority=True, banphrasecheck=True)
 
-    def wat(self, m, u, d):
-        ok = ActiveUsers(self.bot)
-        ok.start()
+    def handle_fakefact(self, message, user_id, display_name):
+        m = message.split()
+        if (len(m) > 1):
+            res = self.factsGen.gen(m[1:])
+        else:
+            res = self.factsGen.gen()
+        self.bot.queue_message(res, priority=True, banphrasecheck=True)
 
     def handle_dicethrow(self, message, user_id, display_name):
         m = message[1:].split()
