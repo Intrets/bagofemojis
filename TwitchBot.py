@@ -24,7 +24,7 @@ class OnlineChecker(threading.Thread):
             else:
                 self.twitchbot.online = True
             print("channel online: ", self.twitchbot.online)
-            time.sleep(60 * 15)
+            time.sleep(60 * 5)
 
 
 class BanPhraseChecker(threading.Thread):
