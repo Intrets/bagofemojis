@@ -4,7 +4,7 @@ import sqlite3
 
 class DataBase():
 
-    def __init__(self, database='nammers'):
+    def __init__(self, database):
         self.database = database
         self.create_table()
 

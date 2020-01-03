@@ -30,6 +30,7 @@ class Config:
             self.questionsFileLocation = options['questionsFileLocation']
             self.jokesFileLocation = options['jokesFileLocation']
             self.namwordsFileLocation = options['namwordsFileLocation']
+            self.databaseLocation = options['databaseLocation']
 
         except:
             return False

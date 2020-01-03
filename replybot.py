@@ -144,7 +144,7 @@ class Main:
             for line in file:
                 self.jokes.append(line.rstrip())
 
-        self.bountyHandler = NaMBounty.BountyHandler()
+        self.bountyHandler = NaMBounty.BountyHandler(self.config)
         self.bot = TwitchBot.TwitchBot(config)
         self.commandHandler = Command.CommandHandler()
         self.create_commands()
@@ -199,7 +199,7 @@ class Main:
         self.bot.queue_message(out, priority=True, banphrasecheck=True)
 
     def cmd_topnammers(self, message, user_id, display_name):
-        res = DataBase.DataBase('nammers').get_top_points(limit=9)
+        res = DataBase.DataBase(self.config.databaseLocation).get_top_points(limit=9)
         out = 'Top x nammers NaM 👉 '
         count = 0
         for (_, display_name, points, _) in res:

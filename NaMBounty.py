@@ -10,8 +10,8 @@ def check_word(message, word):
 
 class BountyHandler:
 
-    def __init__(self):
-        self.database = DataBase.DataBase('nammers')
+    def __init__(self, config):
+        self.database = DataBase.DataBase(config.databaseLocation)
 
         self.openBounty = dict()
         self.claimedBounty = dict()
