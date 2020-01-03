@@ -19,7 +19,7 @@ class ActiveUsers(threading.Thread):
 
     def run(self):
         payload = "https://tmi.twitch.tv/group/user/" + self.bot.channel + "/chatters"
-        r = requests.get(payload, headers={'Client-ID': 'TODO'})
+        r = requests.get(payload, headers={'Client-ID': self.bot.config.client_id})
         viewers = r.json()['chatters']['viewers']
         message = " ".join(viewers)
         print(message)

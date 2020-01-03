@@ -17,7 +17,7 @@ class OnlineChecker(threading.Thread):
     def run(self):
         while True:
             payload = 'https://api.twitch.tv/helix/streams?user_login=' + self.twitchbot.config.channel[1:]
-            r = requests.get(payload, headers={'Client-ID': 'TODO'})
+            r = requests.get(payload, headers={'Client-ID': self.twitchbot.config.client_id})
             res = r.json()['data']
             if res == []:
                 self.twitchbot.online = False
