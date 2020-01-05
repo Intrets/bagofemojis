@@ -153,7 +153,10 @@ class Main:
         self.bot.add_pub_bind(self.on_pubmsg)
         self.bot.add_pub_bind(self.bountyHandler.incomingMessage)
 
-        self.bot.reactor.add_global_handler("all_events", self.bot.parse_message_banned, -10)
+        self.bot.reactor.add_global_handler('all_raw_messages', self.bot.parse_message_banned, -10)
+
+        # someone has been timed out
+        self.bot.reactor.add_global_handler('clearchat', lambda a, b: print('test'), -10)
 
         self.timer_list = list()
 
@@ -174,7 +177,6 @@ class Main:
                 self.timer_list = [a for a in self.timer_list if not a[0] < currenttime]
 
             self.bot.check_queue()
-            self.bot.check_banbuffer()
             self.bot.reactor.process_once()
             time.sleep(0.1)
 
@@ -229,7 +231,7 @@ class Main:
                             requires_global_cooldown=False,
                             id_verification=lambda x: x == str(self.intrets_id)),
             Command.Command(lambda *args: self.bot.queue_message('NaM ' * 70, ignorelength=True, priority=True),
-                            ['!70nams']),
+                            ['!70nams'], id_verification=lambda id: id == str(self.intrets_id)),
             Command.Command(self.cmd_topnammers, ['!topnammers'], command_cooldown=30),
             Command.Command(
                 lambda *args: self.bot.queue_message('You flpping nammers really NaM here after the stream?')

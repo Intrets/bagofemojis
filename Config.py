@@ -31,6 +31,9 @@ class Config:
             self.jokesFileLocation = options['jokesFileLocation']
             self.namwordsFileLocation = options['namwordsFileLocation']
             self.databaseLocation = options['databaseLocation']
+            self.welcomeMessage = options['welcomeMessage']
+            self.doWelcomeMessage = bool(options['doWelcomeMessage'])
+            self.messageRate = float(options['messageRate'])
 
         except:
             return False
