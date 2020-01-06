@@ -76,7 +76,6 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
         if self.config.checkOnline:
             OnlineChecker(self).start()
 
-        # Get the channel id, we will need this for v5 API calls
         url = 'https://api.twitch.tv/kraken/users?login=' + self.config.channel
         headers = {'Client-ID': self.config.client_id, 'Accept': 'application/vnd.twitchtv.v5+json'}
         r = requests.get(url, headers=headers).json()
@@ -112,10 +111,20 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
         for f in self.privBinds:
             f(c, e)
 
-    def on_pubmsg(self, c, e):
+    def on_pubmsg(self, connection, e):
         if not self.config.checkOnline or not self.online:
+            type = e.type
+            source = e.source
+
+            target = e.target
+            message = e.arguments[0]
+
+            tags = dict()
+            for tag in e.tags:
+                tags[tag['key']] = tag['value']
+
             for f in self.pubBinds:
-                f(c, e)
+                f(connection, type, source, target, message, tags)
 
     def queue_message(self, message, callback=lambda *args: None, priority=False, banphrasecheck=False,
                       ignorelength=False, checkban=False):

@@ -34,6 +34,7 @@ class Config:
             self.welcomeMessage = options['welcomeMessage']
             self.doWelcomeMessage = bool(options['doWelcomeMessage'])
             self.messageRate = float(options['messageRate'])
+            self.defaultNamRate = int(options['defaultNamRate'])
 
         except:
             return False

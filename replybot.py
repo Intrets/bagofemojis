@@ -1,5 +1,6 @@
 import random
 import time
+from collections import deque
 
 import CharacterLimit
 import Command
@@ -21,8 +22,20 @@ def starts_with_list(str: str, list: list, cap_important=True):
     return False
 
 
+def stylize_nam(str, prefix='NaM 👉 '):
+    return prefix + str.rstrip().replace('nam', ' _ _ _ ').upper()
+
+
 class Main:
     intrets_id = 86679158
+
+    def verify_intrets(self, id):
+        if type(id) == int:
+            return id == self.intrets_id
+        elif type(id) == str:
+            return id == str(self.intrets_id)
+        else:
+            return False
 
     nammersemojis = ['NaM 👎', 'NaM 👍', 'NaM 🎐💦', 'NaM ❗', 'NaM ❓', 'NaM 🎺', 'NaM 🖕',
                      'NaM 👌', 'NaM Clap', 'NaM 💨', 'NaM 🚬', 'NaM <3',
@@ -63,71 +76,71 @@ class Main:
     #            ('NaM 👉 CIN _ _ _ ALDEHYDE', 'cinnamaldehyde'),
     #            ]
 
-    # ,
-    # ('NaM 👉 ', ''),
-
     usercooldown = dict()
-
-    # for nam in nammersemojis:
-    #     nammers.append((nam, ''))
 
     laststring = ''
 
     counting_nams = False
-    start_nam_count = time.time()
     nam_count = 0
-    namperiod = 5
 
-    def nam_callback(self, message, word):
-        self.bountyHandler.set_bounty_word(word)
+    def post_nam_bounty(self, word=None, points=0, duration=20.0):
+        points = int(points)
+        points = max(1, points)
 
-    def ok(self):
-        self.bountyHandler.add_bounty(self.nam_count)
-        self.nam_count = 0
-
-        next_bounty = self.bountyHandler.next_bounty_value
-
-        if random.random() > 0.2:
-            ch = random.choice(self.nammers)
-            message = ch[0]
-
-            if next_bounty == 1:
-                message += ' (' + str(next_bounty) + ' point ❗)'
-            else:
-                message += ' (' + str(next_bounty) + ' points ❗)'
-            self.counting_nams = False
-            self.bot.queue_message(message, lambda *args: self.nam_callback(message, ch[1]), priority=True)
-        else:
+        if word is None and random.random() < 0.1:
             message = random.choice(self.nammersemojis)
             self.counting_nams = False
             self.bot.queue_message(message)
+            return False
+        if word is None:
+            ch = random.choice(self.nammers)
+            word = ch[1]
+            message = ch[0]
+        else:
+            if 'nam' not in word.lower():
+                return False
+            message = stylize_nam(word)
 
-    def handle_nam(self, message, user_id, display_name, delay=True):
-        print('nam')
-        print(str(delay))
+        duration_part = ''
+        if duration != 20:
+            duration_part = f', {duration:.2f} seconds time limit'
+
+        points_str = 'point' if points == 1 else 'points'
+
+        message = f'{message} ({points} {points_str} ❗ {duration_part})'
+
+        self.bot.queue_message(message, lambda *args: self.bountyHandler.set_bounty_word(word, points), priority=True)
+        return True
+
+    def handle_nam(self, message, user_id, display_name):
+        self.nam_count += 1
         if not self.counting_nams:
             self.counting_nams = True
-            self.nam_count = 1
-            if delay:
-                self.add_timer(self.namperiod, self.ok)
-            else:
-                print('no')
-                self.ok()
-        elif self.counting_nams:
-            self.nam_count += 1
 
-    def add_timer(self, duration, f):
+            def handle():
+                if self.post_nam_bounty(points=self.nam_count):
+                    self.counting_nams = False
+                    self.nam_count = 0
+
+            self.delay(self.nam_period, handle)
+
+    def delay(self, duration, f):
         self.timer_list.append((time.time() + duration, f))
 
     def __init__(self, config):
         self.config = config
+        self.nam_period = self.config.defaultNamRate
+        self.nam_time_stamps = deque()
 
         self.nammers = []
         for word in open(self.config.namwordsFileLocation, 'r'):
             word = word.rstrip()
-            stylizednam = word.replace('nam', ' _ _ _ ')
-            stylizednam = stylizednam.upper()
-            self.nammers.append(('NaM 👉 ' + stylizednam.rstrip(), word))
+            language, word = word.split(maxsplit=1)
+            if language == 'italian:':
+                prefix = '🍝 👌 NaM 👉 '
+            else:
+                prefix = 'NaM 👉 '
+            self.nammers.append((stylize_nam(word, prefix=prefix), word))
 
         self.realFacts = []
         with open(self.config.factsFileLocation, encoding='utf-8-sig') as file:
@@ -149,14 +162,8 @@ class Main:
         self.commandHandler = Command.CommandHandler()
         self.create_commands()
 
-        # self.bot.add_clear_bind(self.on_clearchat)
         self.bot.add_pub_bind(self.on_pubmsg)
         self.bot.add_pub_bind(self.bountyHandler.incomingMessage)
-
-        self.bot.reactor.add_global_handler('all_raw_messages', self.bot.parse_message_banned, -10)
-
-        # someone has been timed out
-        self.bot.reactor.add_global_handler('clearchat', lambda a, b: print('test'), -10)
 
         self.timer_list = list()
 
@@ -171,14 +178,19 @@ class Main:
             for (t, f) in self.timer_list:
                 if t < currenttime:
                     called = True
-                    print('calling')
                     f()
             if called:
                 self.timer_list = [a for a in self.timer_list if not a[0] < currenttime]
 
             self.bot.check_queue()
             self.bot.reactor.process_once()
+            self.sample_duration = 60
+            while self.nam_time_stamps and self.nam_time_stamps[0] < currenttime - self.sample_duration:
+                self.nam_time_stamps.popleft()
             time.sleep(0.1)
+
+    def get_nam_per_minute(self):
+        return len(self.nam_time_stamps) / self.sample_duration * 60
 
     def on_privnotice(self, c, e):
         pass
@@ -187,14 +199,10 @@ class Main:
         points = self.bountyHandler.get_nammer_points(user_id)
         if points == 0:
             out = 'complete the "VIET _ _ _" like this "VIET NaM " for NaM points, 20 seconds time limit'
-            self.bountyHandler.set_tutorial_word('vietnam', None)
+            self.bountyHandler.set_bounty_word('vietnam', points=1)
         else:
             out = display_name + ' you have ' + str(points) + ' NaM ' + ('point' if points == 1 else 'points')
         self.bot.queue_message(out, banphrasecheck=True)
-
-    def cmd_commands(self, message, user_id, display_name):
-        self.bountyHandler.set_tutorial_word('vietnam', None)
-        self.bot.queue_message('complete the "VIET _ _ _" like this "VIET NaM " for NaM points, 20 seconds time limit')
 
     def cmd_parrot(self, message, user_id, display_name):
         out = ''.join(message.split(' ', maxsplit=1)[1:])
@@ -202,7 +210,7 @@ class Main:
 
     def cmd_topnammers(self, message, user_id, display_name):
         res = DataBase.DataBase(self.config.databaseLocation).get_top_points(limit=9)
-        out = 'Top x nammers NaM 👉 '
+        out = 'Top xx nammers NaM 👉 '
         count = 0
         for (_, display_name, points, _) in res:
             new = out + display_name + ': ' + str(points) + ', '
@@ -211,7 +219,7 @@ class Main:
                 out = new
             else:
                 break
-        out = 'Top ' + str(count) + out[5:]
+        out = 'Top ' + str(count) + out[6:]
         out = out[:-2]
         self.bot.queue_message(out, banphrasecheck=True)
 
@@ -221,43 +229,59 @@ class Main:
             Command.Command(self.handle_realfact, ["!fact", "!f", 'forsenScoots', 'OMGScoots']),
             Command.Command(self.handle_fakefact, ['!realfact', '!rf']),
             Command.Command(self.handle_joke, ["!joke", "!j", 'EleGiggle', '4Head']),
-            # Command.Command(self.handle_pun, ["!pun", "!p", '4Head'],
-            #                 user_cooldown=1, command_cooldown=1),
-            Command.Command(lambda a, b, c: self.bot.queue_message("bUrself"), ["bUrself"]),
             Command.Command(self.handle_dicethrow, ['!d']),
-            Command.Command(self.handle_nam, ['NaM', 'NAMMERS'], 0, 0, False, False, requires_start_message=False),
+
+            Command.Command(lambda *_: self.bot.queue_message("bUrself"), ["bUrself"]),
+
+            Command.Command(self.handle_nam, ['NaM', 'NAMMERS'], 0, 0, requires_user_cooldown=False,
+                            requires_global_cooldown=False, requires_start_message=False),
+            Command.Command(lambda *_: self.nam_time_stamps.append(time.time()), ['NaM'], 0, 0,
+                            requires_global_cooldown=False, requires_user_cooldown=False, requires_start_message=False),
             Command.Command(self.cmd_nampoints, ['!nampoints', '!nampoint']),
             Command.Command(self.cmd_parrot, ['!parrot'], 0, 0, requires_user_cooldown=False,
                             requires_global_cooldown=False,
-                            id_verification=lambda x: x == str(self.intrets_id)),
-            Command.Command(lambda *args: self.bot.queue_message('NaM ' * 70, ignorelength=True, priority=True),
-                            ['!70nams'], id_verification=lambda id: id == str(self.intrets_id)),
+                            id_verification=self.verify_intrets),
+            Command.Command(lambda *_: self.bot.queue_message('NaM ' * 70, ignorelength=True, priority=True),
+                            ['!70nams'], id_verification=self.verify_intrets),
             Command.Command(self.cmd_topnammers, ['!topnammers'], command_cooldown=30),
             Command.Command(
                 lambda *args: self.bot.queue_message('You flpping nammers really NaM here after the stream?')
                 , ['!losers'], command_cooldown=30),
-            Command.Command(lambda *args: self.bot.queue_message('NaM - made by Intrets', priority=True)
+            Command.Command(lambda *_: self.bot.queue_message('NaM - made by Intrets', priority=True)
                             , ['!bot'], command_cooldown=30),
+            Command.Command(self.set_nam_rate, ['!setbotspeed'], 0, 0, requires_user_cooldown=False,
+                            id_verification=self.verify_intrets),
+            Command.Command(lambda *_: self.bot.queue_message(f'One NaM every: {self.nam_period} seconds'),
+                            ['!nambotspeed'],
+                            command_cooldown=30),
+            Command.Command(self.add_custom_nam, ['*bounty'], 0, 0, requires_user_cooldown=False,
+                            requires_global_cooldown=False, id_verification=self.verify_intrets),
+            Command.Command(lambda *_: self.bot.queue_message(f'{self.get_nam_per_minute()}'), ['!npm'],
+                            command_cooldown=30),
         ]
-
-        # commandList = [
-        #     Command.Command(self.handle_nam, ['NaM', 'NAMMERS'], 0, 0, False, False),
-        #     Command.Command(self.cmd_nampoints, ['!nampoints', '!nampoint']),
-        #     Command.Command(lambda *args: self.bot.queue_message('MrDestructoid 👌 !namcommands - made by Intrets__')
-        #                     , ['!bot'], command_cooldown=30),
-        #     Command.Command(self.cmd_commands, ['!namcommands', '!namhelp'], command_cooldown=20),
-        #     Command.Command(lambda *args: self.bot.queue_message('NaM ' * 70, ignorelength=True, priority=True),
-        #                     ['!70nams']),
-        #     Command.Command(self.cmd_parrot, ['!parrot'], 0, 0, requires_user_cooldown=False,
-        #                     requires_global_cooldown=False,
-        #                     id_verification=lambda x: x == str(self.intrets_id)),
-        #     Command.Command(
-        #         lambda *args: self.bot.queue_message('You fucking nammers.prepi really NaM here after the stream?')
-        #         , ['!losers'], command_cooldown=30),
-        # ]
 
         for c in commandList:
             self.commandHandler.add_command(c)
+
+    def add_custom_nam(self, message, user_id, display_name):
+        m = message.split(maxsplit=3)
+        try:
+            points = int(m[1])
+            length = float(m[2])
+            word = m[3].lower()
+        except:
+            return
+        self.post_nam_bounty(word, points=points, duration=length)
+
+    def set_nam_rate(self, message, user_id, display_name):
+        m = message.split()
+        if len(m) == 1:
+            self.nam_period = self.config.defaultNamRate
+        elif len(m) > 1:
+            try:
+                self.nam_period = float(m[1])
+            except:
+                pass
 
     def handle_pun(self, message, user_id, display_name):
         res = random.choice(self.jokes)
@@ -269,10 +293,6 @@ class Main:
         question = self.questionsGen.gen()
         answer = self.answersGen.gen()
         res = question + ' ' + answer
-        # if (len(m) > 1):
-        #     res = self.catfactsGen.gen(m[1:])
-        # else:
-        #     res = self.catfactsGen.gen()
         self.bot.queue_message(res, priority=True, banphrasecheck=True)
 
     def handle_realfact(self, message, user_id, display_name):
@@ -312,10 +332,5 @@ class Main:
             res += ', ' + str(d)
         self.bot.queue_message("Dicegolf ⛳ " + res + "⛳ " + str(l), banphrasecheck=False, ignorelength=False)
 
-    def on_pubmsg(self, c, e):
-        received = e.arguments[0]
-        tags = dict()
-        for tag in e.tags:
-            tags[tag['key']] = tag['value']
-
-        self.commandHandler.run_commands(received, tags['user-id'], tags['display-name'])
+    def on_pubmsg(self, connection, type, source, target, message, tags):
+        self.commandHandler.run_commands(message, tags['user-id'], tags['display-name'])
