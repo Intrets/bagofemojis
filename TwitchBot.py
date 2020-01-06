@@ -20,7 +20,6 @@ class OnlineChecker(threading.Thread):
                 payload = 'https://api.twitch.tv/helix/streams?user_login=' + self.twitchbot.config.channel[1:]
                 headers = {'Client-ID': self.twitchbot.config.client_id}
                 r = requests.get(payload, headers=headers)
-                print(r.json())
                 if r.status_code != 200:
                     self.twitchbot.online = True
                     print('bad http response code: ', r.status_code)
