@@ -16,20 +16,24 @@ class OnlineChecker(threading.Thread):
 
     def run(self):
         while True:
-            payload = 'https://api.twitch.tv/helix/streams?user_login=' + self.twitchbot.config.channel[1:]
-            headers = {'Client-ID': self.twitchbot.config.client_id}
-            r = requests.get(payload, headers=headers)
-            if r.status_code != 200:
-                self.twitchbot.online = True
-                print('bad http response code: ', r.status_code)
-            else:
-                res = r.json()['data']
-                if res == []:
-                    self.twitchbot.online = False
-                else:
+            try:
+                payload = 'https://api.twitch.tv/helix/streams?user_login=' + self.twitchbot.config.channel[1:]
+                headers = {'Client-ID': self.twitchbot.config.client_id}
+                r = requests.get(payload, headers=headers)
+                print(r.json())
+                if r.status_code != 200:
                     self.twitchbot.online = True
-                print("channel online: ", self.twitchbot.online)
-            time.sleep(60 * 1)
+                    print('bad http response code: ', r.status_code)
+                else:
+                    res = r.json()['data']
+                    if res == []:
+                        self.twitchbot.online = False
+                    else:
+                        self.twitchbot.online = True
+                    print("channel online: ", self.twitchbot.online)
+            except:
+                self.twitchbot.online = True
+            time.sleep(60 * 2)
 
 
 class BanPhraseChecker(threading.Thread):
