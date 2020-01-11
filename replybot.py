@@ -1,6 +1,9 @@
 import random
+import threading
 import time
 from collections import deque
+
+import requests
 
 import CharacterLimit
 import Command
@@ -258,10 +261,34 @@ class Main:
                             requires_global_cooldown=False, id_verification=self.verify_intrets),
             Command.Command(lambda *_: self.bot.queue_message(f'{self.get_nam_per_minute()}'), ['!npm'],
                             command_cooldown=30),
+            Command.Command(self.yoink_points, ['*yoink'], 0, 0, requires_user_cooldown=False,
+                            requires_global_cooldown=False, id_verification=self.verify_intrets),
         ]
 
         for c in commandList:
             self.commandHandler.add_command(c)
+
+    def yoink_points(self, message, user_id, display_name):
+        m = message.split()
+        if len(m) < 3:
+            return
+        try:
+            target = m[1]
+            points = int(m[2])
+        except:
+            return
+
+        def get_user_id():
+            payload = 'https://api.twitch.tv/helix/users?login=' + target
+            headers = {'Client-ID': self.config.client_id}
+            r = requests.get(payload, headers=headers)
+            if r.status_code != 200:
+                return
+            id = r.json()['data'][0]['id']
+
+            res = DataBase.DataBase(self.config.databaseLocation).add_points_id(id, -points)
+
+        threading.Thread(target=get_user_id).start()
 
     def add_custom_nam(self, message, user_id, display_name):
         m = message.split(maxsplit=3)
