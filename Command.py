@@ -5,8 +5,9 @@ def valid_command(str: str, list: list, requires_start_message, cap_important=Tr
     if requires_start_message:
         return starts_with_list(str, list, cap_important)
     else:
+        words = str.split()
         for b in list:
-            if b in str:
+            if b in words:
                 return True
         return False
 
