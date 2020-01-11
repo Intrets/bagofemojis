@@ -112,7 +112,8 @@ class Main:
 
         message = f'{message} ({points} {points_str} ❗ {duration_part})'
 
-        self.bot.queue_message(message, lambda *args: self.bountyHandler.set_bounty_word(word, points), priority=True)
+        self.bot.queue_message(message, lambda *args: self.bountyHandler.set_bounty_word(word, points, duration),
+                               priority=True)
         return True
 
     def handle_nam(self, message, user_id, display_name):
