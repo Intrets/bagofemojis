@@ -279,6 +279,8 @@ class Main:
             payload = 'http://192.168.2.101:8000/'
             data = {'seed': m[2], 'size': m[1]}
             r = requests.post(payload, data=data)
+            if r.status_code != 200:
+                return
             self.bot.queue_message(r.text, priority=True, banphrasecheck=True)
 
         threading.Thread(target=handle).start()
