@@ -271,13 +271,13 @@ class Main:
             self.commandHandler.add_command(c)
 
     def cmd_special(self, message, user_id, display_name):
-        m = message.split(maxsplit=1)
-        if len(m) == 1:
+        m = message.split(maxsplit=2)
+        if len(m) < 2:
             return
 
         def handle():
             payload = 'http://192.168.2.101:8000/'
-            data = {'seed': m[1], 'size': '10'}
+            data = {'seed': m[2], 'size': m[1]}
             r = requests.post(payload, data=data)
             self.bot.queue_message(r.text, priority=True, banphrasecheck=True)
 
