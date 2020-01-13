@@ -264,10 +264,24 @@ class Main:
                             command_cooldown=30),
             Command.Command(self.yoink_points, ['*yoink'], 0, 0, requires_user_cooldown=False,
                             requires_global_cooldown=False, id_verification=self.verify_intrets),
+            Command.Command(self.cmd_special, ["!thing"]),
         ]
 
         for c in commandList:
             self.commandHandler.add_command(c)
+
+    def cmd_special(self, message, user_id, display_name):
+        m = message.split(maxsplit=1)
+        if len(m) == 1:
+            return
+
+        def handle():
+            payload = 'http://192.168.2.4:8000/'
+            data = {'seed': m[1], 'size': '10'}
+            r = requests.post(payload, data=data)
+            self.bot.queue_message(r.text, priority=True, banphrasecheck=True)
+
+        threading.Thread(target=handle).start()
 
     def yoink_points(self, message, user_id, display_name):
         m = message.split()
