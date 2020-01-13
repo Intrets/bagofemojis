@@ -276,7 +276,7 @@ class Main:
             return
 
         def handle():
-            payload = 'http://192.168.2.4:8000/'
+            payload = 'http://192.168.2.101:8000/'
             data = {'seed': m[1], 'size': '10'}
             r = requests.post(payload, data=data)
             self.bot.queue_message(r.text, priority=True, banphrasecheck=True)
