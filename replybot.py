@@ -264,20 +264,21 @@ class Main:
                             command_cooldown=30),
             Command.Command(self.yoink_points, ['*yoink'], 0, 0, requires_user_cooldown=False,
                             requires_global_cooldown=False, id_verification=self.verify_intrets),
-            Command.Command(self.cmd_special, ["!thing"]),
+            Command.Command(self.cmd_special, ["!thing"], user_cooldown=10, requires_global_cooldown=10),
         ]
 
         for c in commandList:
             self.commandHandler.add_command(c)
 
     def cmd_special(self, message, user_id, display_name):
-        m = message.split(maxsplit=2)
+        m = message.split(maxsplit=1)
         if len(m) < 2:
             return
 
         def handle():
             payload = 'http://192.168.2.101:8000/'
-            data = {'seed': m[2], 'size': m[1]}
+            seed = m[1]
+            data = {'seed': m[1], 'size': '20'}
             r = requests.post(payload, data=data)
             if r.status_code != 200:
                 return
